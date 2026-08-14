@@ -1,0 +1,11 @@
+node_modules
+dist
+.DS_Store
+*.local
+
+# Full-size artwork originals, kept locally as a backup of the web-optimised
+# copies in public/artwork/. Remove this line if you want them tracked.
+artwork-originals
+
+# Local deploy artefact — regenerate any time with: npm run build && zip -r portfolio-dist.zip dist
+portfolio-dist.zip

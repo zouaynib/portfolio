@@ -1,0 +1,492 @@
+/*
+ * UI chrome.
+ *
+ * Serif for display text, generous letter-spacing, warm off-white on a soft
+ * scrim. The scene supplies all the colour, so the interface stays neutral and
+ * gets out of its way.
+ */
+
+:root {
+  --ink: #23301f;
+  --ink-soft: #4c5c46;
+  --paper: rgba(253, 251, 244, 0.92);
+  --edge: rgba(60, 80, 50, 0.14);
+  --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --sans: ui-sans-serif, -apple-system, 'Segoe UI', Inter, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #bcd9e8;
+}
+
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+canvas {
+  display: block;
+  touch-action: none;
+}
+
+/* --- screen-space chrome ------------------------------------------------ */
+
+/* Only the hint and the leave button are in normal flow now, and both belong
+   at the bottom of the screen. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+/*
+ * The nav floats over whatever the camera happens to be showing — bright sky
+ * one moment, near-black foliage the next. Dark ink with a light halo fails on
+ * dark grass, and light ink fails on sky, so the column carries its own soft
+ * scrim and uses light text. The scrim is wide and very low contrast, so it
+ * reads as haze rather than as a panel.
+ */
+.nav {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  pointer-events: auto;
+  padding: 2rem clamp(1.5rem, 4vw, 3.5rem) 2rem 6rem;
+  background: linear-gradient(
+    to left,
+    rgba(24, 36, 20, 0.42),
+    rgba(24, 36, 20, 0.22) 45%,
+    transparent
+  );
+}
+
+.nav__item {
+  appearance: none;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(248, 244, 232, 0.82);
+  padding: 0.5rem 0.1rem 0.5rem 1.5rem;
+  position: relative;
+  transition: color 0.25s ease, transform 0.25s ease;
+  text-shadow: 0 1px 6px rgba(18, 28, 14, 0.7);
+}
+
+/* A short rule that grows out of the label — a quieter hover than a pill. */
+.nav__item::before {
+  content: '';
+  position: absolute;
+  right: calc(100% - 1.1rem);
+  top: 50%;
+  width: 0;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.5;
+  transition: width 0.28s ease;
+}
+
+.nav__item:hover,
+.nav__item--active {
+  color: #fffdf6;
+  transform: translateX(-4px);
+}
+
+.nav__item:hover::before,
+.nav__item--active::before {
+  width: 1.1rem;
+}
+
+.hint {
+  margin: 0;
+  align-self: center;
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(250, 246, 236, 0.88);
+  opacity: 0.9;
+  transition: opacity 0.5s ease;
+  text-shadow: 0 1px 8px rgba(18, 28, 14, 0.85);
+}
+
+.hint--hidden {
+  opacity: 0;
+}
+
+/* The two buildings are a different kind of destination from the content
+   sections, so they sit slightly apart rather than reading as more list items. */
+.nav__item--place {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0.08em;
+  font-size: 0.9rem;
+  border-top: 1px solid rgba(248, 244, 232, 0.22);
+}
+
+/* The second building follows straight on from the first, under one rule. */
+.nav__item--tight {
+  margin-top: 0;
+  padding-top: 0.15rem;
+  border-top: 0;
+}
+
+.leave {
+  align-self: center;
+  pointer-events: auto;
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 0.76rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(250, 246, 236, 0.9);
+  background: rgba(24, 36, 20, 0.5);
+  backdrop-filter: blur(8px);
+  padding: 0.7rem 1.3rem;
+  border-radius: 999px;
+  transition: background 0.25s ease;
+}
+
+.leave:hover {
+  background: rgba(24, 36, 20, 0.72);
+}
+
+/* Robot name tags float closer to the camera than the meadow's stones, so
+   they need to be smaller to sit at the same apparent size. */
+.marker-label--small {
+  font-size: 0.62rem;
+  padding: 0.2rem 0.5rem;
+  letter-spacing: 0.12em;
+}
+
+/* --- model panel -------------------------------------------------------- */
+
+.model__name {
+  display: block;
+  font-family: var(--serif);
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.model__character {
+  margin: 0.4rem 0 1.9rem;
+  font-size: 0.88rem;
+  font-style: italic;
+  color: rgba(76, 92, 70, 0.8);
+}
+
+.model__figure {
+  margin: 1.8rem 0 0;
+}
+
+.model__image {
+  display: block;
+  width: 100%;
+  border-radius: 3px;
+  background: #fff;
+  border: 1px solid var(--edge);
+}
+
+.model__caption {
+  margin-top: 0.55rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: rgba(76, 92, 70, 0.7);
+}
+
+.model__link {
+  display: inline-block;
+  margin-top: 1.8rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(60, 80, 50, 0.35);
+  padding-bottom: 0.2rem;
+  transition: border-color 0.2s ease;
+}
+
+.model__link:hover {
+  border-color: var(--ink);
+}
+
+/* --- lightbox ----------------------------------------------------------- */
+
+.lightbox {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  background: rgba(18, 24, 16, 0.82);
+  backdrop-filter: blur(10px);
+  cursor: zoom-out;
+}
+
+.lightbox__close {
+  position: absolute;
+  top: 1.5rem;
+  right: 2rem;
+  appearance: none;
+  border: 0;
+  background: none;
+  font-size: 2rem;
+  line-height: 1;
+  color: rgba(250, 246, 236, 0.75);
+  cursor: pointer;
+}
+
+.lightbox__close:hover {
+  color: #fff;
+}
+
+.lightbox__figure {
+  margin: 0;
+  max-width: min(100%, 60rem);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+  cursor: default;
+}
+
+.lightbox__image {
+  max-width: 100%;
+  max-height: 72vh;
+  object-fit: contain;
+  border-radius: 2px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+}
+
+/* Shown when the image file does not exist yet. */
+.lightbox__figure--empty::before {
+  content: '';
+  width: min(60vw, 26rem);
+  height: 34vh;
+  border: 1px dashed rgba(250, 246, 236, 0.3);
+  border-radius: 2px;
+}
+
+.lightbox__caption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: center;
+  color: rgba(250, 246, 236, 0.92);
+}
+
+.lightbox__title {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+}
+
+.lightbox__meta {
+  font-size: 0.76rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(250, 246, 236, 0.6);
+}
+
+.lightbox__description {
+  margin: 0.3rem 0 0;
+  max-width: 46ch;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgba(250, 246, 236, 0.72);
+}
+
+.lightbox__hint {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.72rem;
+  color: rgba(250, 246, 236, 0.38);
+}
+
+/* --- in-scene marker labels --------------------------------------------- */
+
+.marker-label {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #1c2a19;
+  white-space: nowrap;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(253, 251, 244, 0.82);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 2px 14px rgba(40, 60, 30, 0.16);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* --- content panel ------------------------------------------------------ */
+
+.panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: min(30rem, 100%);
+  padding: clamp(2rem, 5vw, 3.5rem);
+  overflow-y: auto;
+  background: var(--paper);
+  backdrop-filter: blur(14px);
+  border-left: 1px solid var(--edge);
+  box-shadow: -12px 0 48px rgba(40, 60, 30, 0.1);
+  transform: translateX(100%);
+  opacity: 0;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.panel--open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.panel__close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.5rem;
+  appearance: none;
+  border: 0;
+  background: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.panel__close:hover {
+  color: var(--ink);
+}
+
+.panel__heading {
+  margin: 0 0 1.25rem;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(1.7rem, 3.2vw, 2.3rem);
+  letter-spacing: -0.01em;
+}
+
+.panel__body {
+  margin: 0 0 1rem;
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+.panel__list {
+  list-style: none;
+  margin: 2rem 0 0;
+  padding: 0;
+}
+
+.panel__item {
+  padding: 1.15rem 0;
+  border-top: 1px solid var(--edge);
+}
+
+.panel__item-title {
+  margin: 0 0 0.2rem;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.12rem;
+}
+
+.panel__item-title a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(60, 80, 50, 0.3);
+  transition: border-color 0.2s ease;
+}
+
+.panel__item-title a:hover {
+  border-color: var(--ink);
+}
+
+.panel__item-meta {
+  display: block;
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(76, 92, 70, 0.75);
+  margin-bottom: 0.5rem;
+}
+
+.panel__item-text {
+  margin: 0;
+  font-size: 0.93rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 720px) {
+  .nav {
+    top: auto;
+    bottom: 4.5rem;
+    right: 50%;
+    transform: translateX(50%);
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem 1rem;
+  }
+
+  .nav__item {
+    padding: 0.4rem 0.2rem;
+  }
+
+  .nav__item::before {
+    display: none;
+  }
+
+  .nav__item:hover,
+  .nav__item--active {
+    transform: none;
+  }
+
+  .panel {
+    width: 100%;
+  }
+}
